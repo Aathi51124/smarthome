@@ -1,38 +1,3 @@
-"""
-╔══════════════════════════════════════════════════════════════════════════════╗
-║  DREAMHOUSE AI  v3.0 — DEFINITIVE ARCHITECTURAL BLUEPRINT GENERATOR         ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║  RESEARCH SOURCES                                                            ║
-║  [1] Ching, F.D.K. — Architecture: Form, Space & Order (4th ed.)            ║
-║      Linear/Centralised/Clustered spatial org; public→private zoning        ║
-║      Architectural Graphics: poché, door swings, dimension strings          ║
-║  [2] Neufert, E. — Architects' Data (6th ed., Wiley-Blackwell)              ║
-║      5 plot shapes; min room dims; corridor ≥ 3.5ft; adjacency rules        ║
-║  [3] Schneider & Hébel — Floor Plan Manual: Housing (Birkhäuser, 4th ed.)   ║
-║      Single-loaded p.18, Double-loaded, Enfilade p.22, Central Hall         ║
-║  [4] Saratsis, Dogan & Reinhart (2015) — IBPSA Bldg Simulation              ║
-║      Typological matrix: 5 exterior shapes × 5 interior orgs                ║
-║  [5] Weber, Mueller & Reinhart (2022) — Automation in Construction          ║
-║      Bottom-up vs top-down layout; adjacency + containment challenges       ║
-║  [6] White (1986) Space Adjacency Analysis; Moradi et al. (2024)            ║
-║      Adjacency matrix: mandatory / secondary / avoid pairs                  ║
-║  [7] IRC 2021 §R304 habitable ≥70sf, §R311.6 hallway ≥3ft wide             ║
-║  [8] Foyr / Cedreo / BigRentz / Ching — Floor plan drawing conventions      ║
-║      Stairs: parallel lines + arrow; Window: wall-break triple line         ║
-║      Door: gap in wall + quarter-arc; Bathroom: toilet oval + tub rect      ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║  CHALLENGES DIAGNOSED & SOLVED                                               ║
-║  C1. Gaps between rooms → top-down zone subdivision + proportional packing  ║
-║  C2. Wrong adjacencies → zone-ordered strips (kitchen adj dining,           ║
-║      ensuite adj master, shared bath between secondary beds)                ║
-║  C3. Fixed rectangle → 5 polygon shapes, SVG clipPath clipping             ║
-║  C4. Stretched zones → zone heights ∝ natural room areas, not fixed fracs  ║
-║  C5. Layout sameness → 8 typologies, filtered by plot+room constraints     ║
-║  C6. Wrong SVG symbols → stairs steps+arrow, bath fixtures, kitchen counter ║
-║  C7. Label overflow → 3-tier font scaling, no ugly abbreviations            ║
-║  C8. IRC violations → min 7ft dim, min 70sf area enforced post-packing      ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-"""
 
 import streamlit as st
 from groq import Groq
@@ -57,9 +22,7 @@ st.markdown("""<style>
       color:rgba(220,235,255,.95)!important;}
 </style>""", unsafe_allow_html=True)
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  SYSTEM PROMPT — AI collects 13 parameters, outputs structured JSON
-# ══════════════════════════════════════════════════════════════════════════════
+
 SYSTEM_PROMPT = """You are Dreamhouse AI, an expert architectural consultant. Collect home requirements through warm, enthusiastic conversation, then output a blueprint JSON.
 
 COLLECT ALL (ask 2-3 per message, never more):
@@ -113,9 +76,6 @@ triangular: add "plotBase":60,"plotHeight":80
 corner: add "cornerCut":12
 IRC minimums: bedroom ≥ 70 sf (min 7 ft dim), all habitable ≥ 70 sf, hallway ≥ 3 ft wide."""
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  ROOM COLORS  (fill, stroke, wall-poché, fixture-accent)
-# ══════════════════════════════════════════════════════════════════════════════
 RC = {
     "garage":   {"f":"rgba(148,155,182,.48)","s":"#5566aa","w":"#2a3355","a":"#aab0cc"},
     "entry":    {"f":"rgba(255,210,70,.48)", "s":"#cc9900","w":"#775500","a":"#ffe080"},
@@ -132,10 +92,7 @@ RC = {
     "default":  {"f":"rgba(180,180,180,.32)","s":"#666666","w":"#333333","a":"#999999"},
 }
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  PLOT GEOMETRY — returns bounding box + polygon for each of 5 shapes
-#  Based on Neufert Architects Data classification of residential plots
-# ══════════════════════════════════════════════════════════════════════════════
+
 def plot_geo(spec):
     """
     Returns:
@@ -146,7 +103,7 @@ def plot_geo(spec):
       shape    — normalised shape string
       extras   — shape-specific measurements for annotation
     """
-    M = 2.0  # exterior wall margin in feet (Neufert: min 200mm structural wall)
+    M = 2.0  
     sh = spec.get("plotShape","rectangular").lower().replace("-","").replace(" ","")
     pw = float(spec.get("plotWidth", 60))
     pl = float(spec.get("plotLength",80))
@@ -156,7 +113,7 @@ def plot_geo(spec):
         bw = float(spec.get("backWidth",  pw))
         pw = max(fw, bw)
         poly = [(0,0),(fw,0),(bw,pl),(0,pl)]
-        # Usable box = min(fw,bw) − 2M  wide;  pl − 2M  deep
+     
         uw = min(fw, bw) - 2*M
         uh = pl - 2*M
         extras = {"frontWidth":fw,"backWidth":bw}
@@ -176,9 +133,9 @@ def plot_geo(spec):
         base = float(spec.get("plotBase",   pw))
         ht   = float(spec.get("plotHeight", pl))
         pw, pl = base, ht
-        # Wide at bottom (street), tapers to tip at top
+  
         poly = [(0,pl),(base,pl),(base*0.12,0)]
-        # Rooms only occupy lower ~72% × 68% of bounding box
+       
         uw = base * 0.68 - 2*M
         uh = pl   * 0.72 - 2*M
         extras = {"plotBase":base,"plotHeight":ht}
@@ -189,7 +146,7 @@ def plot_geo(spec):
         uw, uh = pw - 2*M, pl - 2*M
         extras = {"cornerCut":cut}
 
-    else:  # rectangular (default)
+    else:  
         sh = "rectangular"
         poly = [(0,0),(pw,0),(pw,pl),(0,pl)]
         uw, uh = pw - 2*M, pl - 2*M
@@ -202,20 +159,7 @@ def plot_geo(spec):
         "poly":poly, "shape":sh, "extras":extras
     }
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  LAYOUT ENGINE  v3.0
-#  ARCHITECTURE:
-#    • top-down zone subdivision (Weber 2022: top-down naturally satisfies boundary)
-#    • zone heights ∝ total natural area of rooms in zone  [FIX C4]
-#    • adjacency-ordered strip packing:  [FIX C2]
-#        kitchen immediately left of dining (mandatory, White 1986)
-#        ensuite immediately right of master (mandatory)
-#        shared bath between secondary beds
-#    • IRC enforcement post-packing:  [FIX C8]
-#        min area 70 sf, min dimension 7 ft
-#    • 8 typologies filtered by plot compatibility  [FIX C5]
-#    • proportional packing: widths scaled to fill strip exactly  [FIX C1]
-# ══════════════════════════════════════════════════════════════════════════════
+
 def layout_rooms(spec, variant=0):
     g = plot_geo(spec)
     uw, uh, ox, oy, sh = g["uw"], g["uh"], g["ox"], g["oy"], g["shape"]
@@ -238,9 +182,6 @@ def layout_rooms(spec, variant=0):
 
     placed = []
 
-    # ── CORE: proportional strip packing ──────────────────────────────────────
-    # FIX C1: rooms fill strip EXACTLY — no gaps, no overflow
-    # FIX C8: IRC minimum 7ft dim for habitable rooms
     HABITABLE = {"bedroom","living","kitchen","dining","study","entry"}
 
     def _min_w(r): return 7.0 if r.get("type") in HABITABLE else 3.5
@@ -254,12 +195,12 @@ def layout_rooms(spec, variant=0):
         nat = [max(float(r.get("width",10)), _min_w(r)) for r in its]
         tot = sum(nat) or 1
         ws  = [sw * n / tot for n in nat]
-        # Post-scale: enforce minimums, redistribute surplus proportionally
+      
         mins = [_min_w(r) for r in its]
         clamped = [max(w, m) for w, m in zip(ws, mins)]
         overflow = sum(clamped) - sw
         if overflow > 0.01:
-            # Some rooms hit their minimum — reduce non-minimum rooms proportionally
+            
             free_idx = [i for i,w in enumerate(ws) if w > mins[i] + 0.01]
             free_total = sum(ws[i] for i in free_idx) or 1
             for i in free_idx:
@@ -301,15 +242,11 @@ def layout_rooms(spec, variant=0):
             "w":round(sw,2),"h":round(sh2,2),
             "width":int(sw),"length":int(sh2)})
 
-    # ── FIX C2: Adjacency-ordered private zone ─────────────────────────────
-    # White (1986): master→ensuite mandatory (score 3)
-    # Moradi (2024): bedroom→shared bath mandatory; shared bath between beds
     def priv_strip():
         """Returns ordered list: master, ensuite, bed2, [bed3..], shared_bath, [laundry]"""
         z = []
         if master:  z.append(master)
-        if ensuite: z.append(ensuite)   # ensuite RIGHT of master
-        # Insert shared bath between secondary beds if 2+ secondary beds
+        if ensuite: z.append(ensuite)   
         if len(obeds) >= 2:
             z.append(obeds[0])
             if sbaths: z.append(sbaths[0])
@@ -321,8 +258,6 @@ def layout_rooms(spec, variant=0):
         if laundry: z.append(laundry)
         return z
 
-    # ── FIX C4: Zone heights proportional to natural room area ─────────────
-    # Not fixed fractions — derived from actual room totals
     def zone_nat_h(room_list):
         """Average natural length of rooms in a zone."""
         its = [r for r in room_list if r]
@@ -347,15 +282,12 @@ def layout_rooms(spec, variant=0):
         za = max(8.0, round(rem * ha / tot, 2))
         zb = max(8.0, round(rem * hb / tot, 2))
         zc = rem - za - zb
-        if zc < 8.0:      # ensure private zone has enough room
+        if zc < 8.0:      
             delta = 8.0 - zc
             za = max(6.0, za - delta * 0.5)
             zb = max(6.0, zb - delta * 0.5)
             zc = rem - za - zb
         return round(za,2), round(zb,2), round(corridor_h,2), round(zc,2)
-
-    # ── FIX C5: Filter typologies by plot + room constraints ───────────────
-    # Only offer typologies that architecturally suit the given conditions
     TYPO_NAMES = ["Linear","Single-Loaded","Central-Hall","Enfilade",
                   "L-Shape","Double-Loaded","Clustered-Core","Courtyard-Wrap"]
 
@@ -364,13 +296,12 @@ def layout_rooms(spec, variant=0):
         for i, name in enumerate(TYPO_NAMES):
             if name == "L-Shape"       and sh not in ("rectangular","lshaped"): continue
             if name == "Courtyard-Wrap"and nbed < 2: continue
-            if name == "Enfilade"      and nbed > 4: continue  # too many rooms for 3 columns
+            if name == "Enfilade"      and nbed > 4: continue  
             if name == "Clustered-Core"and nbed < 3: continue
             valid.append(i)
         return valid
 
     if variant == 0:
-        # Smart default (Saratsis 2015 typological matrix)
         if sh == "lshaped":               t = 4
         elif sh == "triangular":          t = 1
         elif sh == "corner":              t = 7
@@ -384,16 +315,9 @@ def layout_rooms(spec, variant=0):
 
     spec["_typology"] = TYPO_NAMES[t]
 
-    # ══════════════════════════════════════════════════════════════════════════
-    #  TYPOLOGIES
-    # ══════════════════════════════════════════════════════════════════════════
-
-    # ── 0. LINEAR  (Ching FSO Ch.5 — linear spatial organisation) ────────────
-    # Street → service strip → public strip → corridor → private strip
-    # Classic ranch/bungalow. Works for rectangular + trapezoidal.
     if t == 0:
         za = [garage, entry, study]
-        zb = [living, stair, kitchen, dining]  # kitchen adj dining [FIX C2]
+        zb = [living, stair, kitchen, dining]  
         zc = priv_strip()
         z1h, z2h, zhh, z3h = compute_zone_heights(za, zb, zc)
         ph(za,          ox, oy,                  uw, z1h)
@@ -401,9 +325,7 @@ def layout_rooms(spec, variant=0):
         corr(           ox, oy+z1h+z2h,          uw, zhh)
         ph(zc,          ox, oy+z1h+z2h+zhh,      uw, z3h)
 
-    # ── 1. SINGLE-LOADED CORRIDOR  (Schneider FPM p.18) ──────────────────────
-    # Left service column (garage+study stacked); all other rooms on right.
-    # "Rooms on one side of a corridor — well day-lit." (Schneider)
+   
     elif t == 1:
         lcW = round(uw * 0.26, 2);  rcW = uw - lcW;  rcX = ox + lcW
         gH  = round(uh * 0.44, 2);  sH  = uh - gH
@@ -418,8 +340,6 @@ def layout_rooms(spec, variant=0):
         corr(  rcX, oy+r1h+r2h,      rcW, rhh)
         ph(zc, rcX, oy+r1h+r2h+rhh,  rcW, r3h)
 
-    # ── 2. CENTRAL HALL  (Schneider / American Four-Square tradition) ─────────
-    # Entry+stair form central core; public rooms flank; private at rear.
     elif t == 2:
         za = [garage, entry, study]
         zb = [living, kitchen, dining]
@@ -430,7 +350,6 @@ def layout_rooms(spec, variant=0):
         ph([entry,stair],   ox+lw, oy, mw, z1h)
         p1(study,  ox+lw+mw,oy,    rw, z1h)
         p1(living, ox,      oy+z1h,lw, z2h)
-        # Central hall — named distinctly (NOT same as corridor)
         placed.append({"type":"hallway","name":"Central Hall",
             "x":round(ox+lw,2),"y":round(oy+z1h,2),
             "w":round(mw,2),"h":round(z2h,2),"width":int(mw),"length":int(z2h)})
@@ -440,11 +359,6 @@ def layout_rooms(spec, variant=0):
         pv([master,ensuite],      ox,    oy+z1h+z2h+zhh, mW,    z3h)
         ph(obeds+sbaths+([laundry] if laundry else []),
            ox+mW, oy+z1h+z2h+zhh, uw-mW, z3h)
-
-    # ── 3. ENFILADE  (Schneider p.22 / European Baroque) ─────────────────────
-    # 3 vertical columns full depth — rooms align in enfilade (no corridor).
-    # Left: garage→living→master+ensuite  Mid: entry→kitchen+dining→beds
-    # Right: study→stair→baths+laundry
     elif t == 3:
         c1 = round(uw*.38,2); c2 = round(uw*.36,2); c3 = uw-c1-c2
         gH = round(uh*.22,2); lvH = round(uh*.40,2); msH = uh-gH-lvH
@@ -453,7 +367,7 @@ def layout_rooms(spec, variant=0):
         pv([master,ensuite],ox,         oy+gH+lvH, c1, msH)
         eH  = round(uh*.22,2); kdH = round(uh*.40,2); bdH = uh-eH-kdH
         p1(entry,           ox+c1, oy,     c2, eH)
-        pv([kitchen,dining],ox+c1, oy+eH,  c2, kdH)  # kitchen adj dining
+        pv([kitchen,dining],ox+c1, oy+eH,  c2, kdH) 
         pv(obeds[:2],       ox+c1, oy+eH+kdH, c2, bdH)
         stH = round(uh*.22,2); scH = round(uh*.40,2)
         p1(study, ox+c1+c2, oy,        c3, stH)
@@ -461,13 +375,9 @@ def layout_rooms(spec, variant=0):
         pv(sbaths+([laundry] if laundry else []),
            ox+c1+c2, oy+stH+scH, c3, uh-stH-scH)
 
-    # ── 4. L-SHAPE WINGS  (Ching FSO p.141) ──────────────────────────────────
-    # "L-shaped planes enclose outdoor space." Public wing horizontal across top.
-    # Private wing vertical at right. Service/study fills bottom-left corner.
     elif t == 4:
         hwH = round(uh*.38,2)
         priv = priv_strip()
-        # Ensure private wing is wide enough for all rooms at IRC 7ft minimum
         n_priv = max(1, len(priv))
         min_priv_w = n_priv * 7.0
         vwW = round(max(uw * 0.55, min(min_priv_w + 2, uw * 0.72)), 2)
@@ -476,38 +386,31 @@ def layout_rooms(spec, variant=0):
         zhL = max(round(vwH*.08,2), 3.0)
         corr(      vwX, oy+hwH,      vwW, zhL)
         ph(priv,   vwX, oy+hwH+zhL,  vwW, vwH-zhL)
-        # Service column: study only (laundry already in priv_strip)
         pv([r for r in [study] if r], ox, oy+hwH, svW, vwH)
 
-    # ── 5. DOUBLE-LOADED CORRIDOR  (Schneider / Saratsis 2015) ───────────────
-    # Central corridor spine; public rooms above, private below.
-    # Entry and stair anchor the ends of the corridor.
     elif t == 5:
         spY = round(uh*.46,2); spH = max(round(uh*.07,2),3.0)
         topH = spY;  botH = uh-spY-spH
-        endW = max(round(uw*.12,2), 7.0); midW = uw-2*endW  # IRC: entry min 7ft
+        endW = max(round(uw*.12,2), 7.0); midW = uw-2*endW  
         p1(entry, ox,          oy+spY, endW, spH)
         p1(stair, ox+uw-endW,  oy+spY, endW, spH)
         corr(ox+endW, oy+spY, midW, spH)
         ph([garage,living,kitchen,dining], ox, oy,        uw, topH)
         ph(priv_strip(),                  ox, oy+spY+spH, uw, botH)
 
-    # ── 6. CLUSTERED CORE  (Saratsis 2015 / Ebner 2010: Point typology) ──────
-    # Stair+service at centre; zones cluster outward from core.
-    # 4-row × 3-column grid.
     elif t == 6:
         c1 = round(uw*.36,2); c2 = round(uw*.26,2); c3 = uw-c1-c2
         r1 = round(uh*.18,2); r2 = round(uh*.22,2); r3 = round(uh*.22,2)
         r4 = uh-r1-r2-r3
-        # Row 1: service/front
+       
         p1(garage, ox,       oy,      c1, r1)
         p1(entry,  ox+c1,    oy,      c2, r1)
         p1(study,  ox+c1+c2, oy,      c3, r1)
-        # Row 2: public — kitchen adj dining
+      
         p1(living,  ox,       oy+r1,   c1, r2)
         p1(laundry, ox+c1,    oy+r1,   c2, r2)
         p1(kitchen, ox+c1+c2, oy+r1,   c3, r2)
-        # Row 3: public cont. — dining + stair core
+      
         p1(dining,  ox,       oy+r1+r2,c1, r3)
         p1(stair,   ox+c1,    oy+r1+r2,c2, r3)
         sb0 = sbaths[0] if sbaths else None
@@ -518,53 +421,35 @@ def layout_rooms(spec, variant=0):
         pv([master,ensuite],              ox,    oy+r1+r2+r3, mW,    r4)
         ph(obeds+sbaths[1:],              ox+mW+c2, oy+r1+r2+r3, uw-mW-c2, r4)
 
-    # ── 7. COURTYARD WRAP / U-SHAPE  (Neufert Block / Ching FSO p.158) ───────
-    # Three wings wrap a protected inner courtyard.
-    # Top wing = public rooms. Left wing = service. Right wing = private.
+    
     elif t == 7:
         wW   = round(uw*.24,2); midW = uw-2*wW; topH = round(uh*.28,2)
-        # Full-width public top wing
+
         ph([entry,living,stair,kitchen,dining], ox, oy, uw, topH)
-        # Left service wing (garage top, study bottom)
+       
         botH = uh-topH
         gH   = round(botH*.50,2)
         p1(garage, ox, oy+topH,    wW, gH)
         p1(study,  ox, oy+topH+gH, wW, botH-gH)
-        # Right private wing with corridor
+        
         zhC = max(round(botH*.09,2),3.0)
         corr(ox+uw-wW, oy+topH,     wW, zhC)
         pv(priv_strip(), ox+uw-wW, oy+topH+zhC, wW, botH-zhC)
-        # Courtyard — open green space (Neufert Block typology)
         placed.append({"type":"courtyard","name":"Courtyard / Garden",
             "x":round(ox+wW,2),"y":round(oy+topH,2),
             "w":round(midW,2),"h":round(botH,2),
             "width":int(midW),"length":int(botH)})
 
-    # ── FIX C8: IRC annotation (tag only — no post-packing resize) ────────────
-    # Post-packing resize causes overlaps in adjacent strip rooms.
-    # IRC §R304 7ft minimums are ALREADY enforced at packing time via _min_w/_min_h.
-    # We tag rooms that are still tight so the SVG renderer can flag them visually.
     for r in placed:
         if r.get("type","") in HABITABLE:
             r["_irc_warn"] = (r["w"] * r["h"]) < 69.0
 
     return placed
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  SVG BLUEPRINT RENDERER  v3.0
-#  Drawing conventions (Ching Architectural Graphics + industry standards):
-#    [FIX C6] Stairs: parallel treads + directional arrow
-#    [FIX C6] Bathroom: toilet oval, bathtub rectangle, sink circle
-#    [FIX C6] Kitchen: counter rectangle along wall, island if hasIsland
-#    [FIX C6] Windows: wall-break with 3 parallel lines inside wall thickness
-#    [FIX C6] Doors: gap in wall + quarter-circle arc
-#    [FIX C7] Labels: 3-tier font scaling, wrap text instead of abbreviating
-#  Plot: SVG clipPath clips all rooms to actual polygon boundary [FIX C3]
-# ══════════════════════════════════════════════════════════════════════════════
 def render_svg(spec, placed):
-    S     = 8      # pixels per foot
-    PAD   = 75     # padding for dimension strings, zone labels, north arrow
-    TH    = 60     # title block height
+    S     = 8      
+    PAD   = 75    
+    TH    = 60     
 
     g  = plot_geo(spec)
     pw, pl = g["pw"], g["pl"]
@@ -580,7 +465,6 @@ def render_svg(spec, placed):
              f'style="background:#060e22;border-radius:8px;display:block;'
              f'font-family:\'Courier New\',monospace;">')
 
-    # ── Blueprint grid (Ching: regulating lines) ───────────────────────────
     for gx in range(0, int(pw)+1, 10):
         o.append(f'<line x1="{px(gx):.0f}" y1="{py(0)}" x2="{px(gx):.0f}" y2="{py(pl)}" '
                  f'stroke="rgba(40,100,210,.16)" stroke-width=".8"/>')
@@ -594,13 +478,11 @@ def render_svg(spec, placed):
         o.append(f'<line x1="{px(0)}" y1="{py(gy):.0f}" x2="{px(pw)}" y2="{py(gy):.0f}" '
                  f'stroke="rgba(40,100,210,.06)" stroke-width=".3"/>')
 
-    # ── Plot polygon → clipPath + background fill ──────────────────────────
     poly_px = " ".join(f"{px(x):.1f},{py(y):.1f}" for x,y in g["poly"])
     o.append(f'<defs><clipPath id="pc">'
              f'<polygon points="{poly_px}"/></clipPath></defs>')
     o.append(f'<polygon points="{poly_px}" fill="rgba(8,18,58,.85)" stroke="none"/>')
 
-    # Irregular corner landscape zones
     if g["shape"] == "triangular":
         base = g["extras"]["plotBase"]
         tip_pts = " ".join(f"{px(x):.1f},{py(y):.1f}" for x,y in
@@ -615,7 +497,6 @@ def render_svg(spec, placed):
                  f'{px(0):.1f},{py(cut):.1f}" fill="rgba(18,65,18,.4)" '
                  f'stroke="#135516" stroke-width="1" stroke-dasharray="3,3"/>')
 
-    # ── Draw rooms ─────────────────────────────────────────────────────────
     for r in placed:
         rx, ry  = px(r["x"]), py(r["y"])
         rw, rh  = r["w"]*S,   r["h"]*S
@@ -623,11 +504,9 @@ def render_svg(spec, placed):
         c       = RC.get(rt, RC["default"])
         clip    = 'clip-path="url(#pc)"'
 
-        # Room fill
         o.append(f'<rect x="{rx:.1f}" y="{ry:.1f}" width="{rw:.1f}" height="{rh:.1f}" '
                  f'fill="{c["f"]}" stroke="none" {clip}/>')
 
-        # Courtyard — special green fill label only
         if rt == "courtyard":
             cx2, cy2 = rx+rw/2, ry+rh/2
             o.append(f'<text x="{cx2:.0f}" y="{cy2-6:.0f}" text-anchor="middle" '
@@ -636,20 +515,18 @@ def render_svg(spec, placed):
             o.append(f'<text x="{cx2:.0f}" y="{cy2+10:.0f}" text-anchor="middle" '
                      f'dominant-baseline="middle" fill="rgba(55,175,55,.4)" '
                      f'font-size="8">/ Garden</text>')
-            # Hatch garden pattern
+            
             for hx in range(int(rx)+8, int(rx+rw)-8, 14):
                 o.append(f'<line x1="{hx}" y1="{ry+4:.0f}" x2="{hx}" '
                          f'y2="{ry+rh-4:.0f}" stroke="rgba(40,120,40,.18)" stroke-width="1"/>')
             continue
 
-        # ── Poché walls (Ching: thick filled edges = wall mass) ────────────
         WT = 3  # wall thickness px
         for wx,wy,ww,wh in [(rx,ry,rw,WT),(rx,ry+rh-WT,rw,WT),
                              (rx,ry,WT,rh),(rx+rw-WT,ry,WT,rh)]:
             o.append(f'<rect x="{wx:.1f}" y="{wy:.1f}" width="{ww:.1f}" height="{wh:.1f}" '
                      f'fill="{c["w"]}" opacity=".95" {clip}/>')
 
-        # ── Hallway: circulation arrows ────────────────────────────────────
         if rt == "hallway":
             my = ry + rh/2
             for ax in [rx+rw*.25, rx+rw*.5, rx+rw*.75]:
@@ -660,10 +537,7 @@ def render_svg(spec, placed):
                      f'CIRCULATION</text>')
             continue
 
-        # ── FIX C6: Room-specific fixtures ─────────────────────────────────
-
         if rt == "staircase":
-            # Stairs: parallel treads + directional arrow (Ching / Foyr convention)
             n_treads = max(4, min(10, int(rh / 8)))
             tread_h  = rh / (n_treads + 1)
             for i in range(1, n_treads+1):
@@ -727,7 +601,6 @@ def render_svg(spec, placed):
                          f'stroke="{c["a"]}" stroke-width="1.5" stroke-dasharray="4,2" {clip}/>')
 
         elif rt == "bedroom":
-            # Bed rectangle centred in lower half of room
             bw2 = min(rw*0.65, 52); bh2 = min(rh*0.45, 40)
             bx2 = rx + (rw-bw2)/2; by2 = ry + rh*0.45
             o.append(f'<rect x="{bx2:.1f}" y="{by2:.1f}" width="{bw2:.1f}" '
@@ -757,8 +630,6 @@ def render_svg(spec, placed):
                          f'height="{ch2:.1f}" rx="4" fill="none" '
                          f'stroke="{c["a"]}" stroke-width="1.2" stroke-dasharray="3,2" {clip}/>')
 
-        # ── Door symbol (Ching + Foyr: gap in wall + quarter-arc) ──────────
-        # Placed at bottom-left corner, arc shows door clearance
         dw = min(max(rw * 0.32, 14), 30)
         dx = rx + WT; dy = ry + rh - WT
         o.append(f'<line x1="{dx:.1f}" y1="{dy:.1f}" '
@@ -768,8 +639,6 @@ def render_svg(spec, placed):
                  f'{dx:.1f} {dy-dw:.1f}" fill="none" stroke="{c["s"]}" '
                  f'stroke-width="1" stroke-dasharray="3,2" {clip}/>')
 
-        # ── FIX C6: Windows on exterior walls (wall-break + 3 parallel lines)
-        # (Ching / BigRentz: window = 3 lines inside wall break)
         M2 = g["ox"] + 0.8
         is_t = r["y"] <= M2;           is_b = (r["y"]+r["h"]) >= (pl - M2)
         is_l = r["x"] <= M2;           is_r = (r["x"]+r["w"]) >= (pw - M2)
@@ -838,13 +707,11 @@ def render_svg(spec, placed):
                      f'dominant-baseline="middle" fill="rgba(255,255,255,.85)" '
                      f'font-size="7" font-weight="bold">{name}</text>')
 
-    # ── Exterior wall polygon — thick (Ching: heavier than interior walls) ──
     o.append(f'<polygon points="{poly_px}" fill="none" stroke="#4a9eff" stroke-width="4.8"/>')
     # Surveyor dashed line offset
     o.append(f'<polygon points="{poly_px}" fill="none" stroke="rgba(74,158,255,.22)" '
              f'stroke-width="1.5" stroke-dasharray="9,5" transform="translate(-3,-3)"/>')
 
-    # ── Dimension strings (Ching: continuous with tick marks) ───────────────
     dc = "#4a9eff"; tk = 7
     # Width (top)
     o.append(f'<line x1="{px(0)}" y1="{py(0)-30}" x2="{px(pw)}" y2="{py(0)-30}" '
@@ -865,7 +732,6 @@ def render_svg(spec, placed):
              f'font-size="11" transform="rotate(-90,{px(0)-44},{mh:.0f})">'
              f'{pl:.0f}\'-0"</text>')
 
-    # ── Zone labels (left margin) ─────────────────────────────────────────
     ZM = {"garage":"FRONT/SERVICE","entry":"FRONT/SERVICE","study":"FRONT/SERVICE",
           "living":"PUBLIC LIVING","kitchen":"PUBLIC LIVING","dining":"PUBLIC LIVING",
           "staircase":"PUBLIC LIVING","hallway":"CIRCULATION",
@@ -882,7 +748,6 @@ def render_svg(spec, placed):
         o.append(f'<text x="6" y="{yp:.0f}" fill="{ZC.get(lbl,"#aaa")}" '
                  f'font-size="7" writing-mode="tb" letter-spacing="1.8">{lbl}</text>')
 
-    # ── North arrow ────────────────────────────────────────────────────────
     nax, nay = tw-40, PAD+40
     o.append(f'<circle cx="{nax}" cy="{nay}" r="18" fill="none" '
              f'stroke="rgba(74,158,255,.38)" stroke-width="1"/>')
@@ -893,7 +758,6 @@ def render_svg(spec, placed):
     o.append(f'<text x="{nax}" y="{nay-27}" text-anchor="middle" '
              f'fill="#4a9eff" font-size="13" font-weight="bold">N</text>')
 
-    # ── Title block ────────────────────────────────────────────────────────
     tby  = PAD + int(pl*S) + 12
     tbw  = int(pw*S)
     style_lbl = spec.get("style","custom").upper()
@@ -938,9 +802,6 @@ def render_svg(spec, placed):
     o.append("</svg>")
     return "\n".join(o)
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  UTILITIES
-# ══════════════════════════════════════════════════════════════════════════════
 def parse_bp(text):
     m = re.search(r"```json\s*([\s\S]*?)\s*```", text)
     if not m: return None
@@ -963,9 +824,6 @@ def call_ai(history):
     except Exception as e:
         return f"⚠️ API Error: {e}"
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  SESSION STATE
-# ══════════════════════════════════════════════════════════════════════════════
 if "dh_messages" not in st.session_state:
     st.session_state.dh_messages = [{"role":"assistant","content":
         "Welcome to **Dreamhouse AI** 🏡\n\n"
@@ -980,9 +838,6 @@ if "dh_messages" not in st.session_state:
     st.session_state.dh_placed  = None
     st.session_state.dh_variant = 0
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  UI
-# ══════════════════════════════════════════════════════════════════════════════
 st.markdown(
     '<span style="font-family:Courier New,monospace;font-size:1.3rem;'
     'font-weight:700;color:#4a9eff;letter-spacing:.06em;">⬡ DREAMHOUSE '
@@ -993,8 +848,6 @@ st.markdown(
 st.divider()
 
 chat_col, bp_col = st.columns([1, 1.45])
-
-# ── Chat ───────────────────────────────────────────────────────────────────
 with chat_col:
     chat_box = st.container(height=530)
     with chat_box:
@@ -1024,7 +877,6 @@ with chat_col:
                 st.session_state.dh_variant = 0
         st.rerun()
 
-# ── Blueprint panel ────────────────────────────────────────────────────────
 with bp_col:
     if st.session_state.dh_spec and st.session_state.dh_placed:
         spec  = st.session_state.dh_spec
@@ -1040,7 +892,6 @@ with bp_col:
                     spec, st.session_state.dh_variant)
                 st.rerun()
 
-        # Colour legend
         leg = '<div style="display:flex;flex-wrap:wrap;gap:4px 10px;margin-bottom:5px;">'
         for t, c in RC.items():
             if t in ("default","hallway","courtyard"): continue
@@ -1051,8 +902,6 @@ with bp_col:
                     f'font-family:Courier New,monospace;">{t.title()}</span></div>')
         leg += "</div>"
         st.markdown(leg, unsafe_allow_html=True)
-
-        # Typology description
         TDESC = {
             "Linear":        "Ching FSO Ch.5 · Linear org · public→private front-to-back",
             "Single-Loaded": "Schneider FPM p.18 · Side column · rooms face exterior",
