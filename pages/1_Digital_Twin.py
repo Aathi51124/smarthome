@@ -15,10 +15,6 @@ import plotly.graph_objects as go
 nltk.download("punkt", quiet=True)
 nltk.download("stopwords", quiet=True)
 nltk.download("punkt_tab", quiet=True)
-
-# =============================================================================
-# 1. DIGITAL TWIN SIMULATOR
-# =============================================================================
 class DigitalTwinSimulator:
     def __init__(self, devices_df, environment_df, rules_df):
         self.devices = devices_df.to_dict("records")
@@ -72,9 +68,6 @@ class DigitalTwinSimulator:
         return pd.DataFrame(self.time_step_results)
 
 
-# =============================================================================
-# 2. CONFLICT DETECTION
-# =============================================================================
 class ConflictDetector:
     def __init__(self, rules_df):
         self.rules = rules_df.to_dict("records")
@@ -107,9 +100,6 @@ class ConflictDetector:
         return [self.resolve_conflict(c) for c in conflicts], conflicts
 
 
-# =============================================================================
-# 3. LSTM ENERGY PREDICTOR (Pure NumPy - no TensorFlow)
-# =============================================================================
 class LSTMEnergyPredictor:
     """Single-layer LSTM implemented in NumPy. No TensorFlow dependency."""
     def __init__(self, energy_df, sequence_length=10):
@@ -200,9 +190,6 @@ class LSTMEnergyPredictor:
         return pred_norm * self.scaler_std + self.scaler_mean
 
 
-# =============================================================================
-# 4. LP OPTIMIZER
-# =============================================================================
 class LPOptimizer:
     def __init__(self, devices_df, current_temp, occupancy, time_interval=1.0):
         self.devices = devices_df.to_dict("records")
@@ -229,9 +216,6 @@ class LPOptimizer:
         return {d["device_id"]: "ON" if dv[d["device_id"]].varValue > 0.5 else "OFF" for d in self.devices}, pulp.value(prob.objective)
 
 
-# =============================================================================
-# 5. NLP COMPILER
-# =============================================================================
 class NLPCompiler:
     def __init__(self, devices_df):
         self.devices_df = devices_df
@@ -293,9 +277,6 @@ class NLPCompiler:
         return pd.DataFrame([r for r in rules if self.validate_rule(r)])
 
 
-# =============================================================================
-# 6. RL RESOLVER
-# =============================================================================
 class RLConflictResolver:
     def __init__(self, rules_df, devices_df, alpha=0.1, gamma=0.9, epsilon=0.1):
         self.rules = rules_df.to_dict("records")
@@ -344,9 +325,6 @@ class RLConflictResolver:
         return self.rules[max(possible, key=lambda a: self.q_table[state][a])]
 
 
-# =============================================================================
-# DATA
-# =============================================================================
 @st.cache_data
 def generate_data():
     devices = pd.DataFrame([
@@ -387,10 +365,6 @@ def train_rl(rules_df, devices_df):
     rl.train(episodes=500)
     return rl
 
-# =============================================================================
-# APP
-# =============================================================================
-# Page config handled by main app.py
 st.title("🏠 Smart Home Digital Twin Dashboard")
 
 st.sidebar.header("Simulation Controls")
