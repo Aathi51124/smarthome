@@ -1,7 +1,7 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="SmartDream AI",
+    page_title="Neuroplan AI",
     page_icon="🏠",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -14,7 +14,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🏠 SmartDream AI Platform")
+st.title("🏠 Neutoplan AI Platform")
 st.subheader("Your intelligent smart home ecosystem")
 
 st.markdown("---")
@@ -38,7 +38,7 @@ with col1:
 
 with col2:
     st.markdown("""
-    ### 🏡 Dreamhouse AI Blueprint Generator
+    ### 🏡 Neuroplan AI Blueprint Generator
     Chat with an AI architect to design your custom floor plan — rendered as a professional blueprint.
     
     **Features:**
@@ -51,4 +51,4 @@ with col2:
     """)
 
 st.markdown("---")
-st.caption("SmartDream AI Platform ·  Built with Streamlit")
+st.caption("Neuroplan AI Platform ·  Built with Streamlit")
